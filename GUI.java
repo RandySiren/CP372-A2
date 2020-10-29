@@ -1,16 +1,11 @@
 import java.awt.BorderLayout;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
-import javax.swing.BoxLayout;
-import javax.swing.JTextField;
-import javax.swing.JCheckBox;
-import javax.swing.JButton;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.SocketException;
 
 public class GUI extends JFrame {
     private final ReceiverHandler receiverHandler;
@@ -25,7 +20,31 @@ public class GUI extends JFrame {
     }
 
     private void btnReceiveHandler(ActionEvent e) {
-        System.out.println("Button clicked!");
+        if (buttonReceive.getText().equals("RECEIVE")) {
+            try {
+                String address = txtSenderAddress.getText();
+                int senderPort = Integer.parseInt(txtSenderPort.getText());
+                int receiverPort = Integer.parseInt(txtReceiverPort.getText());
+                String outputFileName = txtOutputFileName.getText();
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    public Void doInBackground() {
+                        try {
+                            receiverHandler.startReceiving(address, senderPort, receiverPort, outputFileName);
+                        } catch (IOException exception) {
+                            exception.printStackTrace();
+                        }
+                        return null;
+                    }
+                }.execute();
+                buttonReceive.setText("TERMINATE");
+            } catch (NumberFormatException exception) {
+                JOptionPane.showMessageDialog(this, "Invalid port number(s), please enter a number", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            receiverHandler.stopReceiving();
+            buttonReceive.setText("RECEIVE");
+        }
     }
 
     private void checkboxReliableHandler(ActionEvent e) {
@@ -66,6 +85,7 @@ public class GUI extends JFrame {
         panelSenderAddress.add(lblSenderAddress, BorderLayout.WEST);
 
         txtSenderAddress = new JTextField();
+        txtSenderAddress.setText("127.0.0.1"); //TODO: REMOVE DEFAULT
         panelSenderAddress.add(txtSenderAddress, BorderLayout.SOUTH);
         txtSenderAddress.setColumns(10);
 
@@ -79,6 +99,7 @@ public class GUI extends JFrame {
         panelSenderPort.add(lblSenderPort, BorderLayout.WEST);
 
         txtSenderPort = new JTextField();
+        txtSenderPort.setText("0"); //TODO: REMOVE DEFAULT
         txtSenderPort.setColumns(10);
         panelSenderPort.add(txtSenderPort, BorderLayout.SOUTH);
 
@@ -92,6 +113,7 @@ public class GUI extends JFrame {
         panelReceiverPort.add(lblReceiverPort, BorderLayout.WEST);
 
         txtReceiverPort = new JTextField();
+        txtReceiverPort.setText("4455"); //TODO: REMOVE DEFAULT
         txtReceiverPort.setColumns(10);
         panelReceiverPort.add(txtReceiverPort, BorderLayout.SOUTH);
 
@@ -105,6 +127,7 @@ public class GUI extends JFrame {
         panelOutputFileName.add(lblOutputFileName, BorderLayout.WEST);
 
         txtOutputFileName = new JTextField();
+        txtOutputFileName.setText("test.txt"); //TODO: REMOVE DEFAULT
         txtOutputFileName.setColumns(10);
         panelOutputFileName.add(txtOutputFileName, BorderLayout.SOUTH);
 
@@ -114,6 +137,7 @@ public class GUI extends JFrame {
         panelOtherComponents.setLayout(new BorderLayout(0, 0));
 
         checkboxReliable = new JCheckBox("Reliable");
+        checkboxReliable.setSelected(true);
         checkboxReliable.addActionListener(this::checkboxReliableHandler);
         panelOtherComponents.add(checkboxReliable, BorderLayout.CENTER);
 
@@ -156,5 +180,5 @@ public class GUI extends JFrame {
     JPanel panelInfo;
     JLabel lblInfo;
     JLabel lblPacketsReceived;
-   
+
 }
