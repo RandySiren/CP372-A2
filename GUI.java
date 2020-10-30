@@ -5,7 +5,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.net.SocketException;
 
 public class GUI extends JFrame {
     private final ReceiverHandler receiverHandler;
@@ -20,17 +19,23 @@ public class GUI extends JFrame {
     }
 
     private void btnReceiveHandler(ActionEvent e) {
+        // Check if we are currently receiving or not based on button
         if (buttonReceive.getText().equals("RECEIVE")) {
             try {
+                // Parse all JComponents into useful values
                 String address = txtSenderAddress.getText();
                 int senderPort = Integer.parseInt(txtSenderPort.getText());
                 int receiverPort = Integer.parseInt(txtReceiverPort.getText());
                 String outputFileName = txtOutputFileName.getText();
+                boolean reliable = checkboxReliable.isSelected();
+
+                // Background process to start receiving so we don't block our GUI and its repainting
                 new SwingWorker<Void, Void>() {
                     @Override
                     public Void doInBackground() {
                         try {
-                            receiverHandler.startReceiving(address, senderPort, receiverPort, outputFileName);
+                            receiverHandler.setInOrderPacketLabel(lblPacketsReceived); // Assign our JLabel to our ReceiverHandler to update it
+                            receiverHandler.startReceiving(address, senderPort, receiverPort, outputFileName, reliable);
                         } catch (IOException exception) {
                             exception.printStackTrace();
                         }
@@ -42,13 +47,10 @@ public class GUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "Invalid port number(s), please enter a number", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
+            // Stop receiving/disconnect
             receiverHandler.stopReceiving();
             buttonReceive.setText("RECEIVE");
         }
-    }
-
-    private void checkboxReliableHandler(ActionEvent e) {
-        System.out.println("Checkbox clicked!");
     }
 
     private void initComponents() {
@@ -99,7 +101,7 @@ public class GUI extends JFrame {
         panelSenderPort.add(lblSenderPort, BorderLayout.WEST);
 
         txtSenderPort = new JTextField();
-        txtSenderPort.setText("0"); //TODO: REMOVE DEFAULT
+        txtSenderPort.setText("3321"); //TODO: REMOVE DEFAULT
         txtSenderPort.setColumns(10);
         panelSenderPort.add(txtSenderPort, BorderLayout.SOUTH);
 
@@ -127,7 +129,7 @@ public class GUI extends JFrame {
         panelOutputFileName.add(lblOutputFileName, BorderLayout.WEST);
 
         txtOutputFileName = new JTextField();
-        txtOutputFileName.setText("test.txt"); //TODO: REMOVE DEFAULT
+        txtOutputFileName.setText("received.txt"); //TODO: REMOVE DEFAULT
         txtOutputFileName.setColumns(10);
         panelOutputFileName.add(txtOutputFileName, BorderLayout.SOUTH);
 
@@ -138,7 +140,6 @@ public class GUI extends JFrame {
 
         checkboxReliable = new JCheckBox("Reliable");
         checkboxReliable.setSelected(true);
-        checkboxReliable.addActionListener(this::checkboxReliableHandler);
         panelOtherComponents.add(checkboxReliable, BorderLayout.CENTER);
 
         buttonReceive = new JButton("RECEIVE");
